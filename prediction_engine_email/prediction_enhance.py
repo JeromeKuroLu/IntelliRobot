@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import pandas as pd
 from data_source import DumpFile, CsvFile
 from data_preparation import Cleansing, Splitting
 from modeling import Transformation
@@ -101,10 +102,17 @@ def training(raw_data, training_data, test_data, training_label, test_label, lab
 
 def calculate_distance(training_data, test_data):
     transformation = Transformation()
-    transformer = transformation.build_word2vec(training_data)
-    training_data_numpy = transformation.tranform_word2vec(transformer, training_data)
-    test_data = ["Booking Office"]
-    test_data_numpy = transformation.tranform_word2vec(transformer, test_data)
+    kb_data = CsvFile.read(file_path=data_base_path + '/KB.csv', headers=[0,1])
+    training_data = list(kb_data.ix[1:, 1])
+    # transformer = transformation.build_word2vec(training_data)
+    # training_data_numpy = transformation.tranform_word2vec(transformer, training_data)
+    test_data = ['HOW TO COMBINE MULTIPLE PDF FILES IN ACTOBAT 6 AND ACROBAT 7']
+    # test_data_numpy = transformation.tranform_word2vec(transformer, test_data)
+
+    transformer = transformation.build_tfidf_transformer(training_data, stop_words=Cleansing.stopwords())
+    training_data_numpy = transformer.transform(training_data)
+    test_data_numpy = transformer.transform(test_data)
+
     calculation_distance.calculateDistance(training_data_numpy, training_data, test_data_numpy, test_data, return_num = 10)
 
 def training_email_subject(source_file_name, algorithm="bayes", show_pic=True):

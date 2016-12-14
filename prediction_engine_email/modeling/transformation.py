@@ -73,18 +73,25 @@ class Transformation:
 
     @staticmethod
     def build_word2vec(
-            contents, num_features=400, min_word_count=40, num_workers=5, context=10, downsampling=1e-3):
+            contents, num_features=400, min_word_count=3, num_workers=5, context=10, downsampling=1e-3):
         transformer = Word2Vec(
             workers=num_workers, size=num_features, min_count=min_word_count
             , window=context, sample=downsampling)
 
+        # vocab = []
+        # for o in contents:
+        #     l = o.split()
+        #     vocab.append(l)
         transformer.build_vocab(contents)
         transformer.train(contents)
 
         return transformer
 
     @staticmethod
-    def tranform_word2vec(transformer, contents, num_features=400):
+    def tranform_word2vec(transformer, contents, num_features=400, scale_status=False):
         transformer.train(contents)
         train_vecs = np.concatenate([Transformation.build_word_vector(transformer, z, num_features) for z in contents])
-        return scale(train_vecs)
+        if(scale_status==False):
+            return scale(train_vecs)
+        else:
+            return scale(train_vecs, with_mean=False, with_std=False, copy=True)

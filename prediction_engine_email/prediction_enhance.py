@@ -81,7 +81,6 @@ def training(raw_data, training_data, test_data, training_label, test_label, lab
     training_data_numpy = transformer.transform(training_data)
     # test_data = "RE: Book"
     test_data_numpy = transformer.transform(test_data)
-    calculate_distance(training_data, test_data)
     DumpFile.write(file_path=transformer_file_path, data=transformer)
 
     # Modeling
@@ -100,20 +99,31 @@ def training(raw_data, training_data, test_data, training_label, test_label, lab
         evaluator.plot_cm(sub_plot1)
         plt.show()
 
-def calculate_distance(training_data, test_data):
+def calculate_distance():
     transformation = Transformation()
     kb_data = CsvFile.read(file_path=data_base_path + '/KB.csv', headers=[0,1])
     training_data = list(kb_data.ix[1:, 1])
-    # transformer = transformation.build_word2vec(training_data)
-    # training_data_numpy = transformation.tranform_word2vec(transformer, training_data)
+    training_data = splitSentenceArray(training_data)
+    # test_data = ['HOW TO COMBINE MULTIPLE PDF FILES IN ACTOBAT']
     test_data = ['HOW TO COMBINE MULTIPLE PDF FILES IN ACTOBAT 6 AND ACROBAT 7']
-    # test_data_numpy = transformation.tranform_word2vec(transformer, test_data)
+    # test_data = ['I WANT TO KNOW HOW TO COMBINE PDF FILES']
+    test_data = splitSentenceArray(test_data)
+    transformer = transformation.build_word2vec(training_data)
+    training_data_numpy = transformation.tranform_word2vec(transformer, training_data, scale_status=True)
+    test_data_numpy = transformation.tranform_word2vec(transformer, test_data, scale_status=True)
 
-    transformer = transformation.build_tfidf_transformer(training_data, stop_words=Cleansing.stopwords())
-    training_data_numpy = transformer.transform(training_data)
-    test_data_numpy = transformer.transform(test_data)
+    # transformer = transformation.build_tfidf_transformer(training_data, stop_words=Cleansing.stopwords())
+    # training_data_numpy = transformer.transform(training_data)
+    # test_data_numpy = transformer.transform(test_data)
 
     calculation_distance.calculateDistance(training_data_numpy, training_data, test_data_numpy, test_data, return_num = 10)
+
+def splitSentenceArray(a):
+    ta = []
+    for o in a:
+        t = o.split()
+        ta.append(t)
+    return ta
 
 def training_email_subject(source_file_name, algorithm="bayes", show_pic=True):
     # Data preparation
@@ -146,6 +156,7 @@ def training_email(source_file_name, algorithm="bayes", show_pic=True):
     only_body = raw_data[['intention', 'body']]
     all_content = raw_data[['intention', 'all']]
 
+    calculate_distance()
     training_data, training_label, test_data, test_label \
         = Splitting().stratifiedSplit(labels=only_subject.ix[:, 0], contents=only_subject.ix[:, 1])
     training(raw_data, training_data, test_data, training_label, test_label, ["intention", "subject"],

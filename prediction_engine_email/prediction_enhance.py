@@ -99,15 +99,33 @@ def training(raw_data, training_data, test_data, training_label, test_label, lab
         evaluator.plot_cm(sub_plot1)
         plt.show()
 
+
 def calculate_distance():
     transformation = Transformation()
-    kb_data = CsvFile.read(file_path=data_base_path + '/KB.csv', headers=[0,1])
-    training_data = list(kb_data.ix[1:, 1])
-    training_data = splitSentenceArray(training_data)
+    kb_data = CsvFile.read(file_path=data_base_path + '/KB_Category.csv', separator="!@#",
+                           headers=["Sub category", "Problem", "Link or problem"])
+    # categories = get_list(kb_data['Sub category'])
+    kb_data['Sub category'] = kb_data['Sub category'].str.lower()
+    categories = list(set(kb_data['Sub category']))
+    categories.sort()
+    training_data_list = []
+    que_ans_map = {}
+    for category in categories:
+        t = kb_data[kb_data['Sub category'].isin([category])]
+        training_data_list = list(t['Problem'])
+        i = 0
+        for i in range(len(training_data_list)):
+            problem = training_data_list[i]
+            answer = t.iloc[i, 2]
+            que_ans_map[problem] = answer
+        training_data = splitSentenceList(training_data_list)
+        transformer = transformation.build_word2vec(training_data, min_word_count=1)
+        DumpFile.write(file_path=model_base_path + r'/word2vec_' + category.replace('/', '_'), data=transformer)
+
     # test_data = ['HOW TO COMBINE MULTIPLE PDF FILES IN ACTOBAT']
     test_data = ['HOW TO COMBINE MULTIPLE PDF FILES IN ACTOBAT 6 AND ACROBAT 7']
     # test_data = ['I WANT TO KNOW HOW TO COMBINE PDF FILES']
-    test_data = splitSentenceArray(test_data)
+    test_data = splitSentenceList(test_data)
     transformer = transformation.build_word2vec(training_data)
     training_data_numpy = transformation.tranform_word2vec(transformer, training_data, scale_status=True)
     test_data_numpy = transformation.tranform_word2vec(transformer, test_data, scale_status=True)
@@ -116,14 +134,27 @@ def calculate_distance():
     # training_data_numpy = transformer.transform(training_data)
     # test_data_numpy = transformer.transform(test_data)
 
-    calculation_distance.calculateDistance(training_data_numpy, training_data, test_data_numpy, test_data, return_num = 10)
+    calculation_distance.calculateDistance(training_data_numpy, training_data, test_data_numpy, test_data,
+                                           return_num=10)
 
-def splitSentenceArray(a):
+
+def get_list(s):
+    l = list(s)
+    rl = []
+    for d in s:
+        low_d = d.lower()
+        if low_d not in rl:
+            rl.append(low_d)
+    return rl
+
+
+def splitSentenceList(a):
     ta = []
     for o in a:
         t = o.split()
         ta.append(t)
     return ta
+
 
 def training_email_subject(source_file_name, algorithm="bayes", show_pic=True):
     # Data preparation
